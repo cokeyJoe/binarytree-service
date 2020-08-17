@@ -17,22 +17,22 @@ type TreeNode struct {
 	right *TreeNode
 }
 
-// New returns new empty binary tree
-func New() *Tree {
-	mutex := &sync.Mutex{}
-	return &Tree{mutex: mutex}
-}
+// New returns new binary tree with nodes with values
+func New(values ...int) *Tree {
 
-// NewFromInts returns new binary tree with nodes with values
-func NewFromInts(values ...int) *Tree {
-
-	t := New()
+	t := new()
 
 	for _, v := range values {
 		t.Insert(v)
 	}
 
 	return t
+}
+
+// new returns new empty binary tree
+func new() *Tree {
+	mutex := &sync.Mutex{}
+	return &Tree{mutex: mutex}
 }
 
 // Find searches for value in tree and returns value's Node if found
@@ -67,7 +67,56 @@ func (tn *TreeNode) find(value int) *TreeNode {
 
 // Remove removes value if find and rebuilds tree
 func (t *Tree) Remove(value int) {
-	panic("Tree.Remove(value) not implemented")
+
+	if t.head == nil {
+		return
+	}
+
+	t.head.remove(value)
+}
+
+func (tn *TreeNode) remove(value int) *TreeNode {
+
+	if tn == nil {
+		return nil
+	}
+
+	if value < tn.value {
+		tn.left = tn.left.remove(value)
+		return tn
+	}
+	if value > tn.value {
+		tn.right = tn.right.remove(value)
+		return tn
+	}
+
+	if tn.left == nil && tn.right == nil {
+		tn = nil
+		return nil
+	}
+
+	if tn.left == nil {
+		tn = tn.right
+		return tn
+	}
+	if tn.right == nil {
+		tn = tn.left
+		return tn
+	}
+
+	minValueNode := tn.right
+	for {
+
+		if minValueNode != nil && minValueNode.left != nil {
+			minValueNode = minValueNode.left
+		} else {
+			break
+		}
+	}
+
+	tn.value = minValueNode.value
+	tn.right = tn.right.remove(tn.value)
+	return tn
 }
 
 // Insert insert value in tree

@@ -183,7 +183,7 @@ func TestNewFromInts(t *testing.T) {
 	t.Run("must return valid tree", func(t *testing.T) {
 
 		expectedValue_59 := 59
-		tree := NewFromInts(expectedValue_59, 12, 3, 99, 29, 22, 491, 213, 5, 6, 223, 12)
+		tree := New(expectedValue_59, 12, 3, 99, 29, 22, 491, 213, 5, 6, 223, 12)
 
 		if tree.head == nil {
 			t.Error("NewFromInts must return not nil tree.head, got nil")
@@ -211,7 +211,7 @@ func TestTree_Find(t *testing.T) {
 func TestTreeNode_find(t *testing.T) {
 	t.Run("Must find left tree", func(t *testing.T) {
 
-		tree := NewFromInts(50, 10, 40)
+		tree := New(50, 10, 40)
 
 		expectedValue := 10
 		node := tree.Find(expectedValue)
@@ -228,7 +228,7 @@ func TestTreeNode_find(t *testing.T) {
 	})
 
 	t.Run("Tree has no left node, must return nil", func(t *testing.T) {
-		tree := NewFromInts(50, 60, 66)
+		tree := New(50, 60, 66)
 
 		node := tree.Find(10)
 
@@ -241,7 +241,7 @@ func TestTreeNode_find(t *testing.T) {
 
 	t.Run("Must find right tree", func(t *testing.T) {
 
-		tree := NewFromInts(50, 10, 40, 60)
+		tree := New(50, 10, 40, 60)
 
 		expectedValue := 60
 		node := tree.Find(expectedValue)
@@ -258,7 +258,7 @@ func TestTreeNode_find(t *testing.T) {
 	})
 
 	t.Run("Tree has no right node, must return nil", func(t *testing.T) {
-		tree := NewFromInts(50, 15, 10)
+		tree := New(50, 15, 10)
 
 		node := tree.Find(60)
 
@@ -267,5 +267,64 @@ func TestTreeNode_find(t *testing.T) {
 			t.FailNow()
 		}
 
+	})
+}
+
+func TestTreeNode_remove(t *testing.T) {
+	t.Run("Head is nil, must return", func(t *testing.T) {
+		tree := New()
+
+		defer func() {
+			if recover() != nil {
+				t.Error("must not panic")
+			}
+		}()
+		tree.Remove(1)
+
+	})
+
+	t.Run("Head has value, must not affect", func(t *testing.T) {
+		tree := New(1)
+
+		tree.Remove(2)
+
+		defer func() {
+			if recover() != nil {
+				t.Error("must not panic")
+			}
+		}()
+	})
+
+	t.Run("must remove left node", func(t *testing.T) {
+		tree := New(5, 4, 6)
+
+		tree.Remove(4)
+
+		defer func() {
+			if recover() != nil {
+				t.Error("must not panic")
+			}
+		}()
+
+		if tree.head == nil {
+			t.Error("Expected tree.head will not be removed")
+			t.FailNow()
+		}
+
+		if tree.head.left != nil {
+			t.Error("expected tree.head.left will be removed")
+		}
+	})
+
+	t.Run("must replace first left with last rights left node", func(t *testing.T) {
+		tree := New(100, 75, 60, 85, 81)
+
+		_ = tree
+
+		tree.Remove(75)
+
+		if tree.head.left.value != 81 {
+			t.Error("expected node replace")
+		}
 	})
 }
