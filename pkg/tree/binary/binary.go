@@ -15,8 +15,6 @@ type TreeNode struct {
 
 	left  *TreeNode
 	right *TreeNode
-
-	mutex *sync.Mutex
 }
 
 // New returns new empty binary tree
@@ -27,13 +25,44 @@ func New() *Tree {
 
 // NewFromInts returns new binary tree with nodes with values
 func NewFromInts(values ...int) *Tree {
-	panic("NewFromInts not implemented")
+
+	t := New()
+
+	for _, v := range values {
+		t.Insert(v)
+	}
+
+	return t
 }
 
 // Find searches for value in tree and returns value's Node if found
 func (t *Tree) Find(value int) *TreeNode {
-	panic("Tree.Find(int) not implemented")
-	return nil
+	if t.head == nil {
+		return nil
+	}
+
+	return t.head.find(value)
+}
+
+func (tn *TreeNode) find(value int) *TreeNode {
+	if tn.value == value {
+		return tn
+	}
+
+	if value <= tn.value {
+
+		if tn.left == nil {
+			return nil
+		}
+
+		return tn.left.find(value)
+	} else {
+		if tn.right == nil {
+			return nil
+		}
+
+		return tn.right.find(value)
+	}
 }
 
 // Remove removes value if find and rebuilds tree
@@ -46,13 +75,13 @@ func (t *Tree) Insert(value int) {
 
 	t.mutex.Lock()
 
+	defer t.mutex.Unlock()
+
 	if t.head == nil {
 
-		t.head = &TreeNode{value: value, left: nil, right: nil, mutex: t.mutex}
-		t.mutex.Unlock()
+		t.head = &TreeNode{value: value, left: nil, right: nil}
 	} else {
 
-		t.mutex.Unlock()
 		if t.head.value == value {
 			return
 		}
@@ -65,27 +94,20 @@ func (t *Tree) Insert(value int) {
 
 func (tn *TreeNode) insert(value int) {
 
-	tn.mutex.Lock()
-
 	if tn.value == value {
-		tn.mutex.Unlock()
 		return
 	}
 
 	if value <= tn.value {
 		if tn.left == nil {
-			tn.left = &TreeNode{value: value, left: nil, right: nil, mutex: tn.mutex}
-			tn.mutex.Unlock()
+			tn.left = &TreeNode{value: value, left: nil, right: nil}
 		} else {
-			tn.mutex.Unlock()
 			tn.left.insert(value)
 		}
 	} else {
 		if tn.right == nil {
-			tn.right = &TreeNode{value: value, left: nil, right: nil, mutex: tn.mutex}
-			tn.mutex.Unlock()
+			tn.right = &TreeNode{value: value, left: nil, right: nil}
 		} else {
-			tn.mutex.Unlock()
 			tn.right.insert(value)
 		}
 	}
