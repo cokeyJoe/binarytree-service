@@ -328,3 +328,48 @@ func TestTreeNode_remove(t *testing.T) {
 		}
 	})
 }
+
+func TestTreeNode_Value(t *testing.T) {
+	type fields struct {
+		value int
+		left  *TreeNode
+		right *TreeNode
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   int
+	}{
+		{
+			name: "is 5, must return 5", fields: fields{value: 5}, want: 5,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tn := &TreeNode{
+				value: tt.fields.value,
+				left:  tt.fields.left,
+				right: tt.fields.right,
+			}
+			if got := tn.Value(); got != tt.want {
+				t.Errorf("TreeNode.Value() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+
+	t.Run("is nil, must return 0", func(t *testing.T) {
+		var tree *TreeNode
+
+		val := tree.Value()
+
+		defer func() {
+			if recover() != nil {
+				t.Error("must not painc")
+			}
+		}()
+
+		if val != 0 {
+			t.Errorf("must return zero value, got %d", val)
+		}
+	})
+}

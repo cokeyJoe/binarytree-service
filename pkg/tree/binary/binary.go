@@ -161,3 +161,11 @@ func (tn *TreeNode) insert(value int) {
 		}
 	}
 }
+
+func (tn *TreeNode) Value() int {
+	if tn == nil {
+		return 0
+	}
+
+	return tn.value
+}
