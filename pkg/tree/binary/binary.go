@@ -1,7 +1,10 @@
 // Package binary contains binary tree implementation
 package binary
 
-import "sync"
+import (
+	"encoding/json"
+	"sync"
+)
 
 // Tree binary tree struct
 type Tree struct {
@@ -15,6 +18,14 @@ type TreeNode struct {
 
 	left  *TreeNode
 	right *TreeNode
+}
+
+func (tn *TreeNode) MarshalJSON() ([]byte, error) {
+	if tn == nil {
+		return json.Marshal(nil)
+	}
+
+	return json.Marshal(tn.value)
 }
 
 // New returns new binary tree with nodes with values
