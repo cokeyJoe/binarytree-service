@@ -2,6 +2,8 @@ package api
 
 import (
 	"binarytree/pkg/tree/binary"
+	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -200,3 +202,123 @@ func (t *test1Finder) Find(value int) *binary.TreeNode {
 }
 
 func (t *test1Finder) Remove(int) {}
+
+func Test_getValueFromRequest(t *testing.T) {
+	t.Run("has no body, must return error", func(t *testing.T) {
+
+		buf := bytes.NewBuffer([]byte{})
+		req, _ := http.NewRequest("POST", "localhost", buf)
+		_, err := getValueFromRequest(req)
+		if err == nil {
+			t.Errorf("expected error, got nil")
+		}
+
+	})
+
+	t.Run("body has invalid int field, must return error", func(t *testing.T) {
+		var fakeBody struct {
+			Val string `json:"value"`
+		}
+		fakeBody.Val = "555"
+
+		bb, _ := json.Marshal(&fakeBody)
+
+		buf := bytes.NewBuffer(bb)
+		req, _ := http.NewRequest("POST", "localhost", buf)
+		_, err := getValueFromRequest(req)
+		if err == nil {
+			t.Errorf("expected error, got nil")
+		}
+	})
+
+	t.Run("body has valid int, must return no error", func(t *testing.T) {
+		var fakeBody struct {
+			Val int `json:"value"`
+		}
+		fakeBody.Val = 555
+
+		bb, _ := json.Marshal(&fakeBody)
+
+		buf := bytes.NewBuffer(bb)
+		req, _ := http.NewRequest("POST", "localhost", buf)
+		_, err := getValueFromRequest(req)
+		if err != nil {
+			t.Errorf("expected nil error, got %v", err)
+		}
+	})
+}
+
+func TestAPI_insertHandler(t *testing.T) {
+
+	t.Run("request is not valid, must return status 400", func(t *testing.T) {
+
+		rr := &httptest.ResponseRecorder{}
+
+		inserter := &test2Bst{}
+
+		api := &API{
+			bstInserter: inserter,
+		}
+		buf := bytes.NewBuffer([]byte{1, 2, 3})
+		req1, _ := http.NewRequest(http.MethodPost, "localhost", buf)
+
+		api.insertHandler(rr, req1, nil)
+		if rr.Code != http.StatusBadRequest {
+			t.Errorf("expected status code %d, got %d", http.StatusBadRequest, rr.Code)
+		}
+	})
+
+	t.Run("request is valid, must return status 200, record valid value", func(t *testing.T) {
+
+		expectedVal := 555
+
+		rr := &httptest.ResponseRecorder{}
+
+		inserter := &test2Bst{}
+
+		api := &API{
+			bstInserter: inserter,
+		}
+
+		var fakeBody struct {
+			Val int `json:"value"`
+		}
+		fakeBody.Val = expectedVal
+
+		bb, _ := json.Marshal(&fakeBody)
+
+		buf := bytes.NewBuffer(bb)
+		req1, _ := http.NewRequest(http.MethodPost, "localhost", buf)
+
+		api.insertHandler(rr, req1, nil)
+		if rr.Code != http.StatusOK {
+			t.Errorf("expected status code %d, got %d", http.StatusBadRequest, rr.Code)
+		}
+
+		if inserter.value != expectedVal {
+			t.Errorf("expected bst inserts value %d, got %d", expectedVal, inserter.value)
+		}
+	})
+}
+
+type test2Bst struct {
+	value int
+}
+
+func (t *test2Bst) Insert(v int) {
+	t.value = v
+}
+
+func TestAPI_initHandlers(t *testing.T) {
+	t.Run("http handlers must be not nil", func(t *testing.T) {
+		api := &API{
+			httpServer: &http.Server{},
+		}
+
+		api.initHandlers()
+
+		if api.httpServer.Handler == nil {
+			t.Error("expected api.httpServer.Handler not nil, got nil")
+		}
+	})
+}

@@ -1,12 +1,10 @@
 package api
 
 import (
-	"binarytree/pkg/tree/binary"
 	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
@@ -22,18 +20,20 @@ type API struct {
 	bstInserter Inserter
 	bstFinder   Finder
 	bstRemover  Remover
+
+	middlewares []Middleware
 }
 
-type Finder interface {
-	Find(int) *binary.TreeNode
-}
-
-type Inserter interface {
-	Insert(int)
-}
-
-type Remover interface {
-	Remove(int)
+func New(bst BinarySearchTree, addr string) *API {
+	return &API{
+		httpServer: &http.Server{
+			Addr: addr,
+		},
+		bstFinder:   bst,
+		bstInserter: bst,
+		bstRemover:  bst,
+		middlewares: make([]Middleware, 0),
+	}
 }
 
 func (api *API) ListenAndServe() error {
@@ -44,17 +44,22 @@ func (api *API) ListenAndServe() error {
 }
 
 func (api *API) initHandlers() {
+	router := httprouter.New()
 
+	router.GET("/search", handledWith(api.searchHandler, api.middlewares...))
+	router.DELETE("/delete", handledWith(api.deleteHandler, api.middlewares...))
+	router.POST("/insert", handledWith(api.insertHandler, api.middlewares...))
+
+	// todo check api.httpServer is nil
+	api.httpServer.Handler = router
 }
 
-func (api *API) Shutdown() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func (api *API) Shutdown(ctx context.Context) error {
 
-	defer cancel()
 	return api.httpServer.Shutdown(ctx)
 }
 
-func (api *API) searchHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (api *API) searchHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	val, err := getIntFromRequest(r, "val")
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -82,10 +87,9 @@ func getIntFromRequest(r *http.Request, key string) (int, error) {
 	return strconv.Atoi(val)
 }
 
-func (api *API) deleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (api *API) deleteHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	val, err := getIntFromRequest(r, "val")
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -95,6 +99,27 @@ func (api *API) deleteHandler(w http.ResponseWriter, r *http.Request, ps httprou
 	w.WriteHeader(http.StatusOK)
 }
 
-func (api *API) insertHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (api *API) insertHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	value, err := getValueFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
+	api.bstInserter.Insert(value)
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func getValueFromRequest(r *http.Request) (int, error) {
+	var valDto insertValueDto
+	if err := json.NewDecoder(r.Body).Decode(&valDto); err != nil {
+		return 0, err
+	}
+
+	return valDto.IntValue, nil
+}
+
+type insertValueDto struct {
+	IntValue int `json:"value"`
 }
