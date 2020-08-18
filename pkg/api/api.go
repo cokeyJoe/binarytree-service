@@ -40,7 +40,7 @@ func (api *API) ListenAndServe() error {
 
 	api.initHandlers()
 
-	return nil
+	return api.httpServer.ListenAndServe()
 }
 
 func (api *API) initHandlers() {
@@ -62,7 +62,6 @@ func (api *API) Shutdown(ctx context.Context) error {
 func (api *API) searchHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	val, err := getIntFromRequest(r, "val")
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
