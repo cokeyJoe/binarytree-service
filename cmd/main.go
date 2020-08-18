@@ -14,13 +14,14 @@ import (
 func main() {
 
 	path := flag.String("path", "ints.json", "path to ints json file")
+	flag.Parse()
 
 	f, err := os.Open(*path)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	bst, err := utils.FromReader(f)
+	bst, err := utils.FromReader(f, utils.WithMinCount(30))
 
 	// NOTE: немного не смотрится здесь, но дефереом закрывать - будет висеть пока не остановится сервер
 	// при этом файл прочитан, все остальное - не его забота
